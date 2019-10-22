@@ -1,3 +1,5 @@
+.catkin_tools/
+.idea/
 devel/
 logs/
 build/
