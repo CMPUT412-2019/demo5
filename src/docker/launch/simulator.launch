@@ -1,0 +1,11 @@
+<launch>
+    <include file="$(find turtlebot_gazebo)/launch/turtlebot_world.launch">
+        <env name="GAZEBO_MODEL_PATH" value="$(env GAZEBO_MODEL_PATH):$(find docker)/models/"/>
+
+        <arg name="world_file" value="$(find docker)/worlds/course_demo4_with_markers.world"/>
+    </include>
+    <include file="$(find docker)/launch/track.launch">
+        <arg name="marker_size" value="50"/>
+    </include>
+    <node name="rviz" type="rviz" pkg="rviz"/>
+</launch>
