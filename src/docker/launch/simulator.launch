@@ -7,5 +7,6 @@
     <include file="$(find docker)/launch/track.launch">
         <arg name="marker_size" value="50"/>
     </include>
+    <include file="$(find docker)/launch/navigate.launch"/>
     <node name="rviz" type="rviz" pkg="rviz"/>
 </launch>

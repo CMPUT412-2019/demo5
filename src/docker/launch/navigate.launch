@@ -1,10 +1,19 @@
 <launch>
-    <!-- Localization and nav stack and camera -->
-    <include file='$(find turtlebot_navigation)/launch/amcl_demo.launch'>
-        <arg name='map_file' value='$(find docker)/maps/demo4/map.yaml' />
-    </include>
+    <!-- Laser scan -->
+<!--    <node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">-->
+<!--        <remap from="image" to="/camera/depth/image_raw" />-->
+<!--        <remap from="camera_info" to="/camera/depth/camera_info" />-->
+<!--        <remap from="scan" to="/scan" />-->
+<!--    </node>-->
 
     <!-- Teleop -->
     <node name='joy' pkg='joy' type='joy_node' />
     <include file="$(find turtlebot_teleop)/launch/logitech.launch" />
+
+    <!-- Nav stack -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find docker)/maps/empty/map.yaml" />
+    <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml">
+      <arg name="custom_param_file" value="$(find docker)/param/costmap_params.yaml"/>
+      <arg name="global_frame_id" value="odom"/>
+    </include>
 </launch>
