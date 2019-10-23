@@ -1,0 +1,10 @@
+<launch>
+    <!-- Localization and nav stack and camera -->
+    <include file='$(find turtlebot_navigation)/launch/amcl_demo.launch'>
+        <arg name='map_file' value='$(find docker)/maps/demo4/map.yaml' />
+    </include>
+
+    <!-- Teleop -->
+    <node name='joy' pkg='joy' type='joy_node' />
+    <include file="$(find turtlebot_teleop)/launch/logitech.launch" />
+</launch>

@@ -1,10 +1,8 @@
 <launch>
-    <include file="$(find openni2_launch)/launch/openni2.launch"/>
     <include file="$(find ar_track_alvar)/launch/pr2_indiv.launch">
         <arg name="cam_image_topic" value="/camera/depth_registered/points"/>
         <arg name="cam_info_topic" value="/camera/rgb/camera_info"/>
         <arg name="output_frame" value="camera_link"/>
         <arg name="marker_size" value="17.2" />
     </include>
-    <node name="rviz" type="rviz" pkg="rviz"/>
 </launch>

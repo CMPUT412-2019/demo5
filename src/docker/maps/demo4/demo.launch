@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+    <include file="$(find docker)/launch/track.launch"/>
+    <include file="$(find docker)/launch/navigate.launch"/>
+    <!-- Visualization -->
+    <node pkg='rviz' name='rviz' type='rviz'/>
+</launch>
