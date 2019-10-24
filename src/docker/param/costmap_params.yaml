@@ -3,4 +3,4 @@ yaw_goal_tolerance: 0.05  # 0.05
 xy_goal_tolerance: 0.01  # 0.10
 
 # Costmap problems
-costmap_radius: 0.25  # 0.5
+costmap_radius: 0.15  # 0.5

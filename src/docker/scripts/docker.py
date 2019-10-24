@@ -5,9 +5,9 @@ from smach import State, Sequence
 from smach_ros import IntrospectionServer
 from actionlib import SimpleActionClient
 from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
-from tf.transformations import quaternion_multiply, unit_vector, quaternion_conjugate
+from tf.transformations import quaternion_multiply, unit_vector, quaternion_conjugate, quaternion_from_matrix, quaternion_matrix, quaternion_from_euler
 import numpy as np
-from geometry_msgs.msg import Point, PoseStamped, Twist
+from geometry_msgs.msg import Point, PoseStamped, Twist, Quaternion
 import random
 
 from util import SubscriberValue
@@ -32,19 +32,11 @@ class NavigateToMovingGoalState(State):
             pose = self.goal()
             if pose is None:
                 return 'err'
-            print(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z)
-
-            orientation = pose.pose.orientation
-            orientation = np.array([orientation.x, orientation.y, orientation.z, orientation.w])
-            offset = qv_mult(orientation, [0, 0, 1]) * 0.5
-            position = Point(pose.pose.position.x + offset[0],
-                             pose.pose.position.y + offset[1],
-                             pose.pose.position.z + offset[2])
 
             goal = MoveBaseGoal()
             goal.target_pose.header.frame_id = 'odom'
-            goal.target_pose.pose.position = position
-            goal.target_pose.pose.orientation.w = 1
+            goal.target_pose.pose.position = pose.pose.position
+            goal.target_pose.pose.orientation = pose.pose.orientation
             self.client.send_goal(goal)
             if self.client.wait_for_result():
                 break
@@ -88,7 +80,33 @@ class NavigateToMarkerState(State):
         self.marker_tracker = marker_tracker
 
     def execute(self, ud):
-        return NavigateToMovingGoalState(lambda: self.marker_tracker.get_pose(ud.marker_id)).execute({})
+
+        def get_pose():
+            marker_pose = self.marker_tracker.get_pose(ud.marker_id)
+            if marker_pose is None:
+                return marker_pose
+
+            goal_pose = PoseStamped()
+            goal_pose.header.frame_id = goal_pose.header.frame_id
+
+            marker_orientation = marker_pose.pose.orientation
+            marker_orientation = np.array([marker_orientation.x, marker_orientation.y, marker_orientation.z, marker_orientation.w])
+            offset = qv_mult(marker_orientation, [0, 0, 1]) * 0.5
+            goal_position = Point(marker_pose.pose.position.x + offset[0],
+                             marker_pose.pose.position.y + offset[1],
+                             marker_pose.pose.position.z + offset[2])
+
+            marker_yaw = np.pi - np.arctan2(offset[1], offset[0])
+            goal_orientation = quaternion_from_euler(0.0, 0.0, marker_yaw)
+
+            goal_pose.pose.position = goal_position
+            goal_pose.pose.orientation.x = goal_orientation[0]
+            goal_pose.pose.orientation.y = goal_orientation[1]
+            goal_pose.pose.orientation.z = goal_orientation[2]
+            goal_pose.pose.orientation.w = goal_orientation[3]
+            return goal_pose
+
+        return NavigateToMovingGoalState(get_pose).execute({})
 
 
 class FindMarkerState(State):
@@ -156,6 +174,14 @@ class SearchForNextMarkerState(State):
         return 'ok'
 
 
+class NotifyReachedMarkerState(State):
+    def __init__(self):
+        State.__init__(self, outcomes=['ok'], input_keys=['marker_id'])
+
+    def execute(self, ud):
+        print('REACHED MARKER {}'.format(ud.marker_id))
+        rospy.sleep(1)
+        return 'ok'
 
 rospy.init_node('docker')
 marker_tracker = MarkerTracker()
@@ -167,6 +193,7 @@ with seq:
     Sequence.add('SelectMarker', SearchForNextMarkerState(marker_tracker))
     Sequence.add('FindMarker', FindMarkerState(marker_tracker))
     Sequence.add('GoToMarker', NavigateToMarkerState(marker_tracker))
+    Sequence.add('NotifyReachedMarker', NotifyReachedMarkerState())
     Sequence.add('GoToStart', NavigateToStartState(), transitions={'ok': 'SelectMarker'})
 
 
