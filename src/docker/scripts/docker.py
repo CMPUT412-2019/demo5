@@ -38,7 +38,7 @@ class NavigateToMovingGoalState(State):
             goal.target_pose.pose.position = pose.pose.position
             goal.target_pose.pose.orientation = pose.pose.orientation
             self.client.send_goal(goal)
-            if self.client.wait_for_result():
+            if self.client.wait_for_result(timeout=rospy.Duration(1)):
                 break
 
         return 'ok'
@@ -46,32 +46,22 @@ class NavigateToMovingGoalState(State):
 
 class MarkerTracker:
     def __init__(self):
-        self.ar_tags_subscriber = SubscriberValue('ar_pose_marker', AlvarMarkers)
+        self.ar_tags_subscriber = rospy.Subscriber('ar_pose_marker', AlvarMarkers, self._ar_callback)
         self.poses = {}
-        self.times = {}
-        self.timeout = 2
+        self.visible_markers = set()
+
+    def _ar_callback(self, msg):  # type: (AlvarMarkers) -> None
+        visible_markers = set()
+        for m in msg.markers:
+            self.poses[m.id] = m.pose
+            visible_markers.add(m.id)
+        self.visible_markers = visible_markers
 
     def get_pose(self, marker_id):  # type: (int) -> Optional[PoseStamped]
-        pose = next((m.pose for m in self.ar_tags_subscriber.value.markers if m.id == marker_id), None)
-        time = rospy.get_time()
-        if pose is not None:
-            self.poses[marker_id] = pose
-            self.times[marker_id] = time
-            return pose
-        elif marker_id in self.poses and time - self.times[marker_id] < self.timeout:
-            return self.poses[marker_id]
-        else:
-            return None
+        return self.poses.get(marker_id, None)
 
     def get_visible_markers(self):  # type: () -> Set[int]
-        markers = self.ar_tags_subscriber.value.markers
-        time = rospy.get_time()
-        visible_markers = set()
-        visible_markers.update(m.id for m in markers)
-        for marker_id, marker_time in self.times.items():
-            if time - marker_time < self.timeout:
-                visible_markers.add(marker_id)
-        return visible_markers
+        return self.visible_markers
 
 
 class NavigateToMarkerState(State):
