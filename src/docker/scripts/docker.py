@@ -54,8 +54,9 @@ class MarkerTracker:
     def _ar_callback(self, msg):  # type: (AlvarMarkers) -> None
         visible_markers = set()
         for m in msg.markers:
-            self.poses[m.id] = m.pose
-            visible_markers.add(m.id)
+            if m.id != 0 and m.id != 255:
+                self.poses[m.id] = m.pose
+                visible_markers.add(m.id)
         self.visible_markers = visible_markers
 
     def get_pose(self, marker_id):  # type: (int) -> Optional[PoseStamped]
@@ -82,7 +83,7 @@ class NavigateToMarkerState(State):
 
             marker_orientation = marker_pose.pose.orientation
             marker_orientation = np.array([marker_orientation.x, marker_orientation.y, marker_orientation.z, marker_orientation.w])
-            offset = qv_mult(marker_orientation, [0, 0, 1]) * 0.5
+            offset = qv_mult(marker_orientation, [0, 0, 1]) * 0.4
             goal_position = Point(marker_pose.pose.position.x + offset[0],
                              marker_pose.pose.position.y + offset[1],
                              marker_pose.pose.position.z + offset[2])
