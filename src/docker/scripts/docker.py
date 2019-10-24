@@ -9,6 +9,7 @@ from tf.transformations import quaternion_multiply, unit_vector, quaternion_conj
 import numpy as np
 from geometry_msgs.msg import Point, PoseStamped, Twist, Quaternion
 import random
+import playsound
 
 from util import SubscriberValue
 
@@ -170,6 +171,7 @@ class NotifyReachedMarkerState(State):
 
     def execute(self, ud):
         print('REACHED MARKER {}'.format(ud.marker_id))
+        playsound.playsound('../sounds/{}.mp3'.format(ud.marker_id))
         rospy.sleep(1)
         return 'ok'
 
